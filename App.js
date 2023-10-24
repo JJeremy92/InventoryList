@@ -6,10 +6,9 @@ import {
   TextInput,
   View,
   FlatList,
-  Button,
   TouchableOpacity,
 } from "react-native";
-import { FaSortAmountDownAlt, FaSortAmountUpAlt } from "react-icons/fa";
+import Icon from 'react-native-vector-icons/FontAwesome';
 import data from "./data.json";
 
 const ListItem = ({ item, index }) => {
@@ -104,9 +103,9 @@ export default function App() {
         />
         <TouchableOpacity onPress={handleSortPress} style={styles.sortButton}>
           {sortDirection === "asc" ? (
-            <FaSortAmountDownAlt style={styles.sortIcon} />
+            <Icon name="sort-asc" size={30} color="#FFF"/>
           ) : (
-            <FaSortAmountUpAlt style={styles.sortIcon} />
+            <Icon name="sort-desc" size={30} color="#FFF"/>
           )}
         </TouchableOpacity>
       </View>
