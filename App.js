@@ -1,16 +1,26 @@
-import * as React from "react";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import { DataTable, Searchbar } from "react-native-paper";
+import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  FlatList,
+  Button,
+  TouchableOpacity,
+} from "react-native";
+import { FaSortAmountDownAlt, FaSortAmountUpAlt } from "react-icons/fa";
 import data from "./data.json";
 
-const AboutView = ({ text }) => {
-  const [showMore, setShowMore] = React.useState(false);
-  const [isHovered, setIsHovered] = React.useState(false);
+const ListItem = ({ item, index }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const color = item.isActive ? "#ffffff" : "#929292";
+
   const handleMouseEnterIn = () => {
     setIsHovered(true);
   };
+
   const handleMouseEnterOut = () => {
     setIsHovered(false);
   };
@@ -20,23 +30,26 @@ const AboutView = ({ text }) => {
   };
 
   return (
-    <View style={styles.aboutView}>
-      <Text
-        style={
-          !showMore
-            ? {
-                flex: 1,
-                flexWrap: "wrap",
-                textOverflow: "ellipsis",
-                overflow: "hidden",
-                whiteSpace: "nowrap",
-                maxWidth: "30ch",
-              }
-            : styles.aboutText
-        }
-      >
-        {text}
-      </Text>
+    <View style={[styles.listItem, index === data.length - 1 && styles.lastItem]}>
+      <View style={styles.inventoryField}>
+        <Text style={[styles.infoLabel, { color }]}>Name:</Text>
+        <Text style={[styles.infoText, { color }]}>{item.name}</Text>
+      </View>
+      <View style={styles.inventoryField}>
+        <Text style={[styles.infoLabel, { color }]}>Balance:</Text>
+        <Text style={[styles.infoText, { color }]}>{item.balance}</Text>
+      </View>
+      <View style={styles.inventoryField}>
+        <Text style={[styles.infoLabel, { color }]}>Email:</Text>
+        <Text style={[styles.infoText, { color }]}>{item.email}</Text>
+      </View>
+      <View style={styles.inventoryField}>
+        <Text style={[styles.infoLabel, { color }]}>Age:</Text>
+        <Text style={[styles.infoText, { color }]}>{item.age}</Text>
+      </View>
+      {showMore && (
+        <Text style={[styles.infoAbout, { color }]}>{item.about}</Text>
+      )}
       <TouchableOpacity
         onMouseEnter={handleMouseEnterIn}
         onMouseLeave={handleMouseEnterOut}
@@ -45,9 +58,7 @@ const AboutView = ({ text }) => {
         <Text
           style={[
             styles.viewDetail,
-            {
-              textDecorationLine: isHovered ? "underline" : "none",
-            },
+            { color, textDecorationLine: isHovered ? "underline" : "none" },
           ]}
         >
           Show {showMore ? "Less" : "More"}
@@ -56,128 +67,67 @@ const AboutView = ({ text }) => {
     </View>
   );
 };
-const App = () => {
-  const [sortDirection, setSortDirection] = React.useState(undefined);
-  const [sortedField, setSortedField] = React.useState(undefined);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const items = data;
-  const handleSort = (field) => {
-    if (field === sortedField) {
-      // If the same field is clicked, toggle the sort direction
-      setSortDirection(
-        sortDirection === "ascending" ? "descending" : "ascending"
-      );
+
+export default function App() {
+  const [filterText, setFilterText] = useState("");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const handleFilterText = (text) => {
+    setFilterText(text);
+  };
+
+  const filteredData = data.filter((item) =>
+    item.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const handleSortPress = () => {
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+  };
+
+  const sortDataByDirection = (direction) => {
+    if (direction === "asc") {
+      return filteredData.sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      // If a different field is clicked, set the field and sort direction
-      setSortedField(field);
-      setSortDirection("ascending");
+      return filteredData.sort((a, b) => b.name.localeCompare(a.name));
     }
-  };
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-  };
-
-  const handleShowMore = () => {
-    setShowMore(!showMore);
-  };
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Investor List</Text>
-      <Searchbar
-        style={styles.searchBar}
-        placeholder="Search"
-        onChangeText={handleSearch}
-        value={searchQuery}
+      <View style={styles.filterField}>
+        <TextInput
+          style={styles.filterInput}
+          placeholder="Filter by name"
+          value={filterText}
+          onChangeText={handleFilterText}
+          placeholderTextColor="#d3d4d5"
+        />
+        <TouchableOpacity onPress={handleSortPress} style={styles.sortButton}>
+          {sortDirection === "asc" ? (
+            <FaSortAmountDownAlt style={styles.sortIcon} />
+          ) : (
+            <FaSortAmountUpAlt style={styles.sortIcon} />
+          )}
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        style={{ width: "80%" }}
+        data={sortDataByDirection(sortDirection)}
+        renderItem={({ item, index }) => <ListItem item={item} index={index} />}
+        keyExtractor={(item) => item._id}
       />
-      <DataTable style={styles.dataTable}>
-        <DataTable.Header>
-          <DataTable.Title
-            sortDirection={sortedField === "name" ? sortDirection : undefined}
-            onPress={() => handleSort("name")}
-          >
-            Name
-          </DataTable.Title>
-          <DataTable.Title
-            sortDirection={
-              sortedField === "balance" ? sortDirection : undefined
-            }
-            onPress={() => handleSort("balance")}
-          >
-            Balance
-          </DataTable.Title>
-          <DataTable.Title
-            sortDirection={sortedField === "email" ? sortDirection : undefined}
-            onPress={() => handleSort("email")}
-          >
-            Email
-          </DataTable.Title>
-          <DataTable.Title
-            sortDirection={sortedField === "age" ? sortDirection : undefined}
-            onPress={() => handleSort("age")}
-          >
-            Age
-          </DataTable.Title>
-          <DataTable.Title
-            sortDirection={sortedField === "about" ? sortDirection : undefined}
-            onPress={() => handleShowMore()}
-          >
-            About
-          </DataTable.Title>
-        </DataTable.Header>
-
-        {items
-          .filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .sort((a, b) => {
-            if (sortedField === "name") {
-              return sortDirection === "ascending"
-                ? a.name.localeCompare(b.name)
-                : b.name.localeCompare(a.name);
-            } else if (sortedField === "balance") {
-              return sortDirection === "ascending"
-                ? a.balance.localeCompare(b.balance)
-                : b.balance.localeCompare(a.balance);
-            } else if (sortedField === "email") {
-              return sortDirection === "ascending"
-                ? a.email.localeCompare(b.email)
-                : b.email.localeCompare(a.email);
-            } else if (sortedField === "age") {
-              return sortDirection === "ascending"
-                ? a.age - b.age
-                : b.age - a.age;
-            } else {
-              return 0;
-            }
-          })
-          .map((item) => (
-            <DataTable.Row key={item.key}>
-              <DataTable.Cell>{item.name}</DataTable.Cell>
-              <DataTable.Cell>{item.balance}</DataTable.Cell>
-              <DataTable.Cell>{item.email}</DataTable.Cell>
-              <DataTable.Cell>{item.age}</DataTable.Cell>
-              <DataTable.Cell>
-                <AboutView text={item.about} />
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
-      </DataTable>
       <StatusBar style="auto" />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#123668",
     alignItems: "center",
+    justifyContent: "center",
     padding: 20,
-  },
-  dataTable: {
-    backgroundColor: "#ffffff",
   },
   title: {
     fontSize: 32,
@@ -185,20 +135,64 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: "#ffffff",
   },
-  searchBar: {
-    marginBottom: 20,
-    width: "80%",
+  infoLabel: {
+    fontWeight: "bold",
+    fontSize: 20,
+    marginBottom: 4,
+    marginRight: 10,
+  },
+  listItem: {
+    padding: 10,
+    width: "100%",
+    marginBottom: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "#e2d9e1",
+  },
+  infoText: {
+    marginBottom: 5,
+    fontSize: 20,
+  },
+  inventoryField: {
+    alignItems: "center",
+    flexDirection: "row",
+    display: "flex",
+    justifyContent: "space-between",
+  },
+  filterInput: {
+    borderColor: "white",
+    borderWidth: 1,
+    color: "#ffffff",
+    fontSize: 16,
+    height: 40,
+    marginRight: 20,
+    paddingHorizontal: 8,
+    outline: "none",
+    width: "100%",
+    outlineColor: "transparent",
   },
   viewDetail: {
     display: "flex",
     justifyContent: "flex-end",
   },
-  aboutText: {
+  infoAbout: {
     marginTop: 10,
   },
-  aboutView: {
+  filterField: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     width: "100%",
   },
+  sortIcon: {
+    color: "white",
+    fontSize: "30px",
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  lastItem: {
+    marginBottom: 0,
+  },
 });
-
-export default App;
